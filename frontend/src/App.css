@@ -391,6 +391,18 @@ form {
   border-radius: var(--radius);
   margin-bottom: 1rem;
   font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.form-group.has-error input,
+.form-group.has-error select {
+  border-color: var(--destructive);
+}
+
+.field-error {
+  font-size: 0.75rem;
+  color: var(--destructive);
+  margin-top: 0.125rem;
 }
 
 /* Responsive */

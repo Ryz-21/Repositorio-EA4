@@ -10,6 +10,7 @@ function App() {
   const [editingUser, setEditingUser] = useState(null)
   const [deletingUser, setDeletingUser] = useState(null)
   const [error, setError] = useState('')
+  const [formErrors, setFormErrors] = useState({})
   const [form, setForm] = useState({
     nombre: '', apePaterno: '', apeMaterno: '',
     user: '', password: '', estado: 'activo'
@@ -23,14 +24,9 @@ function App() {
     try {
       const res = await fetch(`${API}/usuarios`)
       if (!res.ok) throw new Error('Error al cargar usuarios')
-      const data = await res.json()
-      setUsers(data)
-    } catch {
-      setUsers([
-        { id: 1, nombre: 'Carlos', apePaterno: 'García', apeMaterno: 'López', user: 'cgarcia', password: '***', estado: 'activo' },
-        { id: 2, nombre: 'María', apePaterno: 'Torres', apeMaterno: 'Vega', user: 'mtorres', password: '***', estado: 'activo' },
-        { id: 3, nombre: 'Luis', apePaterno: 'Quispe', apeMaterno: 'Ramos', user: 'lquispe', password: '***', estado: 'inactivo' },
-      ])
+      setUsers(await res.json())
+    } catch (e) {
+      setError(e.message)
     } finally {
       setLoading(false)
     }
@@ -38,11 +34,15 @@ function App() {
 
   function handleChange(e) {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    if (formErrors[e.target.name]) {
+      setFormErrors(prev => ({ ...prev, [e.target.name]: '' }))
+    }
   }
 
   function openCreate() {
     setEditingUser(null)
     setForm({ nombre: '', apePaterno: '', apeMaterno: '', user: '', password: '', estado: 'activo' })
+    setFormErrors({})
     setShowForm(true)
   }
 
@@ -53,12 +53,14 @@ function App() {
       apeMaterno: user.apeMaterno, user: user.user,
       password: '', estado: user.estado
     })
+    setFormErrors({})
     setShowForm(true)
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    setFormErrors({})
 
     const isEdit = !!editingUser
     const url = `${API}/usuarios${isEdit ? `/${editingUser.id}` : ''}`
@@ -71,23 +73,25 @@ function App() {
         body: JSON.stringify(form)
       })
 
-      if (!res.ok) throw new Error('Error al guardar')
+      const body = await res.json().catch(() => null)
 
-      const saved = await res.json()
+      if (!res.ok) {
+        if (body && body.errors) {
+          setFormErrors(body.errors)
+          const first = Object.values(body.errors).flat()[0]
+          throw new Error(first || 'Error de validación')
+        }
+        throw new Error(body?.message || 'Error al guardar')
+      }
+
       if (isEdit) {
-        setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...saved, id: editingUser.id } : u))
+        setUsers(prev => prev.map(u => u.id === editingUser.id ? body : u))
       } else {
-        setUsers(prev => [...prev, saved])
+        setUsers(prev => [...prev, body])
       }
       setShowForm(false)
-    } catch {
-      if (isEdit) {
-        setUsers(prev => prev.map(u => u.id === editingUser.id ? { ...u, ...form } : u))
-      } else {
-        const newId = Math.max(0, ...users.map(u => u.id)) + 1
-        setUsers(prev => [...prev, { id: newId, ...form }])
-      }
-      setShowForm(false)
+    } catch (e) {
+      setError(e.message)
     }
   }
 
@@ -98,10 +102,11 @@ function App() {
       const res = await fetch(`${API}/usuarios/${deletingUser.id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Error al eliminar')
       setUsers(prev => prev.filter(u => u.id !== deletingUser.id))
-    } catch {
-      setUsers(prev => prev.filter(u => u.id !== deletingUser.id))
+      setDeletingUser(null)
+    } catch (e) {
+      setError(e.message)
+      setDeletingUser(null)
     }
-    setDeletingUser(null)
   }
 
   return (
@@ -122,7 +127,7 @@ function App() {
           <button className="btn btn-primary" onClick={openCreate}>+ Nuevo usuario</button>
         </div>
 
-        {error && <div className="error-msg">{error}</div>}
+        {error && <div className="error-msg" onClick={() => setError('')}>{error}</div>}
 
         <div className="card">
           {loading ? (
@@ -181,29 +186,34 @@ function App() {
             <h2 className="modal-title">{editingUser ? 'Editar usuario' : 'Nuevo usuario'}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-row">
-                <div className="form-group">
+                <div className={`form-group ${formErrors.nombre ? 'has-error' : ''}`}>
                   <label htmlFor="nombre">Nombre</label>
                   <input id="nombre" name="nombre" value={form.nombre} onChange={handleChange} required />
+                  {formErrors.nombre && <span className="field-error">{formErrors.nombre[0]}</span>}
                 </div>
-                <div className="form-group">
+                <div className={`form-group ${formErrors.apePaterno ? 'has-error' : ''}`}>
                   <label htmlFor="apePaterno">Apellido paterno</label>
                   <input id="apePaterno" name="apePaterno" value={form.apePaterno} onChange={handleChange} required />
+                  {formErrors.apePaterno && <span className="field-error">{formErrors.apePaterno[0]}</span>}
                 </div>
               </div>
               <div className="form-row">
-                <div className="form-group">
+                <div className={`form-group ${formErrors.apeMaterno ? 'has-error' : ''}`}>
                   <label htmlFor="apeMaterno">Apellido materno</label>
                   <input id="apeMaterno" name="apeMaterno" value={form.apeMaterno} onChange={handleChange} required />
+                  {formErrors.apeMaterno && <span className="field-error">{formErrors.apeMaterno[0]}</span>}
                 </div>
-                <div className="form-group">
+                <div className={`form-group ${formErrors.user ? 'has-error' : ''}`}>
                   <label htmlFor="user">Usuario</label>
                   <input id="user" name="user" value={form.user} onChange={handleChange} required />
+                  {formErrors.user && <span className="field-error">{formErrors.user[0]}</span>}
                 </div>
               </div>
               <div className="form-row">
-                <div className="form-group">
+                <div className={`form-group ${formErrors.password ? 'has-error' : ''}`}>
                   <label htmlFor="password">{editingUser ? 'Nueva contraseña (dejar vacío para mantener)' : 'Contraseña'}</label>
                   <input id="password" name="password" type="password" value={form.password} onChange={handleChange} required={!editingUser} />
+                  {formErrors.password && <span className="field-error">{formErrors.password[0]}</span>}
                 </div>
                 <div className="form-group">
                   <label htmlFor="estado">Estado</label>
