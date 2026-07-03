@@ -33,8 +33,8 @@ RUN composer install --no-dev --no-interaction --prefer-dist
 
 COPY .docker/apache.conf /etc/apache2/sites-available/000-default.conf
 
-RUN chown -R www-data:www-data storage bootstrap/cache
-RUN chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache database
+RUN chmod -R 775 storage bootstrap/cache database
 
 EXPOSE 80
 

@@ -7,5 +7,6 @@ if [ ! -f .env ]; then
 fi
 
 php artisan migrate --seed --force
+chown -R www-data:www-data database storage bootstrap/cache
 
 apache2-foreground
