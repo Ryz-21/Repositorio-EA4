@@ -1,0 +1,21 @@
+services:
+
+  backend:
+    build:
+      context: ./backend
+    container_name: miApp-backend
+    ports:
+      - "8000:80"
+    environment:
+      DB_CONNECTION: sqlite
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: /api
+    container_name: miApp-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
