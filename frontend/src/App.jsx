@@ -21,7 +21,7 @@ function App() {
 
   async function fetchUsers() {
     try {
-      const res = await fetch(`${API}/usuarios.php`)
+      const res = await fetch(`${API}/usuarios`)
       if (!res.ok) throw new Error('Error al cargar usuarios')
       const data = await res.json()
       setUsers(data)
@@ -61,7 +61,7 @@ function App() {
     setError('')
 
     const isEdit = !!editingUser
-    const url = `${API}/usuarios.php${isEdit ? `?id=${editingUser.id}` : ''}`
+    const url = `${API}/usuarios${isEdit ? `/${editingUser.id}` : ''}`
     const method = isEdit ? 'PUT' : 'POST'
 
     try {
@@ -95,7 +95,7 @@ function App() {
     if (!deletingUser) return
 
     try {
-      const res = await fetch(`${API}/usuarios.php?id=${deletingUser.id}`, { method: 'DELETE' })
+      const res = await fetch(`${API}/usuarios/${deletingUser.id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Error al eliminar')
       setUsers(prev => prev.filter(u => u.id !== deletingUser.id))
     } catch {
