@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg-dev \
     libfreetype6-dev \
+    libsqlite3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN docker-php-ext-install \
