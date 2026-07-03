@@ -51,7 +51,9 @@ class UsuarioController extends Controller
             'estado' => 'sometimes|in:activo,inactivo',
         ]);
 
-        if (isset($validated['password'])) {
+        if (empty($validated['password'])) {
+            unset($validated['password']);
+        } else {
             $validated['password'] = Hash::make($validated['password']);
         }
 
